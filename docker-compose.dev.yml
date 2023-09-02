@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+  python:
+    container_name: cypher-direction-challenge
+    build:
+        context: ./
+        dockerfile: ./docker/python/dev/Dockerfile
+    volumes: 
+        - .:/usr/src/app
+    env_file:
+        - docker.python.environment
+    ports:
+        - "8080:80"
