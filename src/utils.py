@@ -21,8 +21,7 @@ CONST_NO_ARROW_RIGHT_SIDE = "]-"
 # To match properties, wrapped by double quotes, in example:
 # { name: "John", age: "20" }
 CONST_PATTERN_ANY_SPACE = '\s*'
-CONST_PATTERN_PROPERTIES = CONST_PATTERN_ANY_SPACE + '(?:\{\s*[a-zA-Z]+:\s*"[^"]*"\s*(?:\s*,\s*[a-zA-Z]+:\s*"[^"]*")*\})?' + CONST_PATTERN_ANY_SPACE
-
+CONST_PATTERN_PROPERTIES = CONST_PATTERN_ANY_SPACE + '(?:\{\s*[a-zA-Z]+:\s*["\'][^"]*["\']\s*(?:\s*,\s*[a-zA-Z]+:\s*["\'][^"]*["\'])*\s*\})?' + CONST_PATTERN_ANY_SPACE
 
 CONST_COLOR_BLUE = "\033[34m"
 CONST_COLOR_RED = "\033[31m"
