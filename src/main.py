@@ -55,11 +55,23 @@ def process_general_pattern(query, schema):
             printy(f'Both directions are defined in {full_match_string}')
             return ''
     
-        # If both classes are not defined, there is nothing to validate, continue
-        # TODO: The class could be in other step inside the query    
+        # If both classes are not defined
+        # The class could be in other part of the query  
+        node_var_a_is_defined = node_var_a != '' and node_var_a != None
+        node_var_b_is_defined = node_var_b != '' and node_var_b != None  
         if not class_a_is_defined and not class_b_is_defined:
-            printy(f'No classes are defined in {full_match_string}')
-            continue
+            if node_var_a_is_defined:
+                node_class_a = search_for_class(node_var_a, query)
+                class_a_is_defined = node_class_a != '' and node_class_a != None
+           
+            if node_var_b_is_defined:
+                node_class_b = search_for_class(node_var_b, query)
+                class_b_is_defined = node_class_b != '' and node_class_b != None
+            
+            # If both classes are still not defined, there is nothing to validate, continue
+            if not class_a_is_defined and not class_b_is_defined:    
+                printy(f'No classes are defined in {full_match_string}')
+                continue
         
         # Identifies source and destination classes
         if left_arrow_is_defined:
@@ -87,7 +99,7 @@ def process_general_pattern(query, schema):
                     correct_full_match_string = correct_full_match_string.replace(CONST_NO_ARROW_LEFT_SIDE, CONST_SIMPLE_ARROW_RIGHT_TO_LEFT)
                 
                 query = query.replace(full_match_string, correct_full_match_string)
-                
+            # if the opposite pattern doesnt exists in schema                
             else:
                 print(f'No schema item found for pattern {source_class_name} {rel_name} {target_class_name} in match {full_match_string}')
                 return ''
@@ -144,11 +156,23 @@ def process_short_rel_pattern(query, schema):
             printr(f'Both directions are defined in {full_match_string}')
             return ''
     
-        # If both classes are not defined, there is nothing to validate, continue
-        # TODO: The class could be in other step inside the query    
+        # If both classes are not defined
+        # The class could be in other part of the query  
+        node_var_a_is_defined = node_var_a != '' and node_var_a != None
+        node_var_b_is_defined = node_var_b != '' and node_var_b != None  
         if not class_a_is_defined and not class_b_is_defined:
-            print(f'No classes are defined in {full_match_string}')
-            continue
+            if node_var_a_is_defined:
+                node_class_a = search_for_class(node_var_a, query)
+                class_a_is_defined = node_class_a != '' and node_class_a != None
+           
+            if node_var_b_is_defined:
+                node_class_b = search_for_class(node_var_b, query)
+                class_b_is_defined = node_class_b != '' and node_class_b != None
+            
+            # If both classes are still not defined, there is nothing to validate, continue
+            if not class_a_is_defined and not class_b_is_defined:    
+                printy(f'No classes are defined in {full_match_string}')
+                continue
         
         if left_arrow_is_defined:
             source_class_is_defined, target_class_is_defined = class_b_is_defined, class_a_is_defined
@@ -173,10 +197,11 @@ def process_short_rel_pattern(query, schema):
                     correct_full_match_string = correct_full_match_string.replace(CONST_LARGE_ARROW_LEFT_TO_RIGHT, CONST_LARGE_ARROW_RIGHT_TO_LEFT)
                 
                 query = query.replace(full_match_string, correct_full_match_string)
-                
+            # if the opposite pattern doesnt exists in schema                
             else:
                 print(f'No schema item found for pattern {source_class_name} {rel_name} {target_class_name} in match {full_match_string}')
                 return ''
+    
     return query
         
 def process_query(query, schema):

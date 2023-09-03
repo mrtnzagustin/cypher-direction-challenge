@@ -1,5 +1,6 @@
 
 import csv
+import re
 
 CYPHER_QUERIES_CSV_FILE_PATH = "examples.csv"
 
@@ -48,34 +49,59 @@ def printn(text):
 def printy(text):
     """Print text in yellow"""
     print(CONST_COLOR_YELLOW + text)
+    
+def search_for_class(variable, query):
+    """Search for the class of the given variable in the query"""
+    # Example (a:Person)
+    pattern_str = f'{create_pattern_node_with_variable(variable,"className")}'
+    pattern = re.compile(pattern_str)
+    
+    matches = pattern.finditer(query)
+    
+    for match in matches:
+        # Get the match string
+        full_match_string = match.group()
+        
+        # Get the groups
+        node_class = match.group('className') and match.group('className').replace(':','').replace('`','')
+        
+        return node_class
+
+    return None
 
 def pattern_exists_in_schema(source_class_name, target_class_name, rel_name, schema, source_class_is_defined, target_class_is_defined, rel_name_is_defined):
     """Check if the given pattern exists in the schema"""
+    # source, relationship and target
     if source_class_is_defined and target_class_is_defined and rel_name_is_defined:
         return any(
             item[CONST_SOURCE_CLASS_KEY] == source_class_name and
             item[CONST_TARGET_CLASS_KEY] == target_class_name and
             item[CONST_RELATIONSHIP_KEY] == rel_name
             for item in schema)
+    # source and target only
     if source_class_is_defined and target_class_is_defined and not rel_name_is_defined:
         return any(
             item[CONST_SOURCE_CLASS_KEY] == source_class_name and
             item[CONST_TARGET_CLASS_KEY] == target_class_name
             for item in schema)
+    # source and relationship only
     if source_class_is_defined and not target_class_is_defined and rel_name_is_defined:
         return any(
             item[CONST_SOURCE_CLASS_KEY] == source_class_name and
             item[CONST_RELATIONSHIP_KEY] == rel_name
             for item in schema)
+    # source only
     if source_class_is_defined and not target_class_is_defined and not rel_name_is_defined:
         return any(
             item[CONST_SOURCE_CLASS_KEY] == source_class_name
             for item in schema)
+    # target and relationship only
     if not source_class_is_defined and target_class_is_defined and rel_name_is_defined:
         return any(
             item[CONST_TARGET_CLASS_KEY] == target_class_name and
             item[CONST_RELATIONSHIP_KEY] == rel_name
             for item in schema)
+    # target only
     if not source_class_is_defined and target_class_is_defined and not rel_name_is_defined:
         return any(
             item[CONST_TARGET_CLASS_KEY] == target_class_name
@@ -93,6 +119,10 @@ def relationship_exists_in_schema(relationship_name, schema):
 def create_pattern_node(variable_group_name, class_group_name):
     return f'(?:\({create_pattern_variable(variable_group_name)}{create_pattern_class(class_group_name)}'+CONST_PATTERN_PROPERTIES+'\))'
 
+# (variable:ClassName) or (:ClassName) or (), including possible properties, variable and class are mandatory
+def create_pattern_node_with_variable(variable_name, class_group_name):
+    return f'(?:\({variable_name}{create_pattern_class_must(class_group_name)}'+CONST_PATTERN_PROPERTIES+'\))'
+
 # a single variable name using words only, no spaces, it could be empty
 def create_pattern_variable(variable_group_name):
     return f'(?P<{variable_group_name}>[a-zA-Z]*)'
@@ -100,6 +130,10 @@ def create_pattern_variable(variable_group_name):
 # :ClassName or :`ClassName`
 def create_pattern_class(class_group_name):
     return f'(?P<{class_group_name}>:`?[a-zA-Z]*`?)?'
+
+# :ClassName or :`ClassName`
+def create_pattern_class_must(class_group_name):
+    return f'(?P<{class_group_name}>:`?[a-zA-Z]*`?)+'
 
 # :REL_TYPE or :`REL_TYPE` 
 def create_pattern_relationship_name(relationship_type_group_name):
