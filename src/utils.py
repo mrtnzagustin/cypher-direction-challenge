@@ -68,6 +68,64 @@ def search_for_class(variable, query):
 
     return None
 
+def search_for_classes(variable, query):
+    """Search for the classes of the given variable in the query"""
+    # Example (a:Person)
+    pattern_str = f'{create_pattern_node_with_variable(variable,"classesNames")}'
+    pattern = re.compile(pattern_str)
+    
+    matches = pattern.finditer(query)
+    
+    for match in matches:
+        # Get the match string
+        full_match_string = match.group()
+        
+        # Get the groups
+        node_classes = match.group('classesNames') and match.group('classesNames').replace(':','', 1).replace('`','').split(':')
+        
+        return node_classes
+
+    return None
+
+def pattern_exists_in_schema_multiple(source_classes_names, target_classes_names, rels_names, schema, source_classes_is_defined, target_classes_is_defined, rels_names_is_defined):
+    # source, relationship and target
+    if source_classes_is_defined and target_classes_is_defined and rels_names_is_defined:
+        for source_class_name in source_classes_names:
+            for target_class_name in target_classes_names:
+                for rel_name in rels_names:
+                    if pattern_exists_in_schema(source_class_name, target_class_name, rel_name, schema, source_classes_is_defined, target_classes_is_defined, rels_names_is_defined):
+                        return True
+    # source and target only
+    if source_classes_is_defined and target_classes_is_defined and not rels_names_is_defined:
+        for source_class_name in source_classes_names:
+            for target_class_name in target_classes_names:
+                if pattern_exists_in_schema(source_class_name, target_class_name, None, schema, source_classes_is_defined, target_classes_is_defined, rels_names_is_defined):
+                    return True
+    # source and relationship only
+    if source_classes_is_defined and not target_classes_is_defined and rels_names_is_defined:
+        for source_class_name in source_classes_names:
+            for rel_name in rels_names:
+                if pattern_exists_in_schema(source_class_name, None, rel_name, schema, source_classes_is_defined, target_classes_is_defined, rels_names_is_defined):
+                    return True
+    # source only
+    if source_classes_is_defined and not target_classes_is_defined and not rels_names_is_defined:
+        for source_class_name in source_classes_names:
+            if pattern_exists_in_schema(source_class_name, None, None, schema, source_classes_is_defined, target_classes_is_defined, rels_names_is_defined):
+                return True
+    # target and relationship only
+    if not source_classes_is_defined and target_classes_is_defined and rels_names_is_defined:
+        for target_class_name in target_classes_names:
+            for rel_name in rels_names:
+                if pattern_exists_in_schema(None, target_class_name, rel_name, schema, source_classes_is_defined, target_classes_is_defined, rels_names_is_defined):
+                    return True
+    # target only
+    if not source_classes_is_defined and target_classes_is_defined and not rels_names_is_defined:
+        for target_class_name in target_classes_names:
+            if pattern_exists_in_schema(None, target_class_name, None, schema, source_classes_is_defined, target_classes_is_defined, rels_names_is_defined):
+                return True
+    
+    return False
+    
 def pattern_exists_in_schema(source_class_name, target_class_name, rel_name, schema, source_class_is_defined, target_class_is_defined, rel_name_is_defined):
     """Check if the given pattern exists in the schema"""
     # source, relationship and target
@@ -110,17 +168,25 @@ def class_exists_in_schema(class_name, schema):
     """Check if the given class exists in the schema"""
     return class_name in list_classes(schema)
 
+def classes_exists_in_schema(classes_name, schema):
+    """Check if at least one of the given classes exists in the schema"""
+    return any (class_name in list_classes(schema) for class_name in classes_name)
+
 def relationship_exists_in_schema(relationship_name, schema):
     """Check if the given relationship exists in the schema"""
     return relationship_name in list_unique_relationships(schema)
 
+def relationships_exists_in_schema(relationships_names, schema):
+    """Check if at least one of the given relationship exists in the schema"""
+    return any (relationship_name in list_unique_relationships(schema) for relationship_name in relationships_names)
+
 # (variable:ClassName) or (:ClassName) or (), including possible properties
 def create_pattern_node(variable_group_name, class_group_name):
-    return f'(?:\({create_pattern_variable(variable_group_name)}{create_pattern_class(class_group_name)}'+CONST_PATTERN_PROPERTIES+'\))'
+    return f'(?:\({create_pattern_variable(variable_group_name)}{create_pattern_classes(class_group_name)}'+CONST_PATTERN_PROPERTIES+'\))'
 
-# (variable:ClassName) or (:ClassName) or (), including possible properties, variable and class are mandatory
-def create_pattern_node_with_variable(variable_name, class_group_name):
-    return f'(?:\({variable_name}{create_pattern_class_must(class_group_name)}'+CONST_PATTERN_PROPERTIES+'\))'
+# (variable:ClassName) or (variable:ClassName:OtherClass) including possible properties, variable and class are mandatory
+def create_pattern_node_with_variable(variable_name, classes_group_name):
+    return f'(?:\({variable_name}{create_pattern_classes_must(classes_group_name)}'+CONST_PATTERN_PROPERTIES+'\))'
 
 # a single variable name using words only, no spaces, it could be empty
 def create_pattern_variable(variable_group_name):
@@ -131,17 +197,20 @@ def create_pattern_class(class_group_name):
     return f'(?P<{class_group_name}>:`?[a-zA-Z]*`?)?'
 
 # :ClassName or :`ClassName`
+def create_pattern_classes(classes_group_name):
+    return f'(?P<{classes_group_name}>(:`?[\w]+`?)*)'
+
+# :ClassName or :`ClassName`
 def create_pattern_class_must(class_group_name):
     return f'(?P<{class_group_name}>:`?[a-zA-Z]*`?)+'
 
-# :REL_TYPE or :`REL_TYPE` 
-def create_pattern_relationship_name(relationship_type_group_name):
-    return f'(?P<{relationship_type_group_name}>:`?[a-zA-Z_]*`?)?'
+# :ClassName or :`ClassName`
+def create_pattern_classes_must(classes_group_name):
+    return f'(?P<{classes_group_name}>(:`?[\w]+`?)+)'
 
-# :ClassName
-def create_pattern_multiple_class(class_group_name):
-    # TODO: Complete
-    return f'(?P<{class_group_name}>:[a-zA-Z]*)*'
+# :REL_TYPE or :`REL_TYPE` 
+def create_pattern_relationship_name(relationships_type_group_name):
+    return f'(?P<{relationships_type_group_name}>(?::`?[a-zA-Z_]*`?)?(?:\|`?[a-zA-Z_]+`?)*)?'
 
 # -[variable:REL_TYPE]- or -[variable:`REL_TYPE`]- or -[:`REL_TYPE`]- including possible properties and arrow directions
 def create_pattern_relationship(relationship_variable_group_name, relationship_type_group_name, left_arrow_name, right_arrow_name):
