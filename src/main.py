@@ -1,13 +1,6 @@
 from utils import *
 import re
 
-def get_first_node_and_relationship(string):
-    """Returns the first node and relationship from the string"""
-    # in example for (nodeA)-[:REL]->(nodeB), returns only (nodeA)-[:REL]->
-    # for (nodeA)-->(nodeB), returns only (nodeA)-->
-    first_node_and_relationship = '(' + string.split('(')[1]
-    return first_node_and_relationship
-
 def process_general_pattern(query, schema):
     """Process the general pattern, with relationship name. Examples: (varA:classA)-[relVar:relName]->(varB:classB) or (varA:classA)<-[relVar:relName]-(varB:classB)"""
     return_empty_response = False # flag used to return an empty string based on challenge guidelines
@@ -55,26 +48,26 @@ def process_general_pattern(query, schema):
             right_arrow = match.group('rightArrow')
             
             # If the relationships name is present, check if relationship exists in the schema
-            rels_names_is_defined = rels_names != CONST_EMPTY_STRING and rels_names != None
+            rels_names_is_defined = is_defined(rels_names)
             if rels_names_is_defined and not relationships_exists_in_schema(rels_names, schema):
                 printy(f'No schema item found for relationships {rels_names} in match {full_match_string}')
                 return_empty_response = True
             
             # If node a has classes, checks that at least one of the classes exists in the schema
-            classes_a_is_defined = node_a_classes != CONST_EMPTY_STRING and node_a_classes != None
+            classes_a_is_defined = is_defined(node_a_classes)
             if classes_a_is_defined and not classes_exists_in_schema(node_a_classes, schema):
                 printy(f'No schema item found for classes {node_a_classes} in match {full_match_string}')
                 return_empty_response = True
             
             # If node b has classes, checks that at least one of the classes exists in the schema
-            classes_b_is_defined = node_b_classes != CONST_EMPTY_STRING and node_b_classes != None
+            classes_b_is_defined = is_defined(node_b_classes)
             if classes_b_is_defined and not classes_exists_in_schema(node_b_classes, schema):
                 printy(f'No schema item found for classes {node_b_classes} in match {full_match_string}')
                 return_empty_response = True
             
             # If there is no direction (right or left arrow) do nothing
-            left_arrow_is_defined = left_arrow != CONST_EMPTY_STRING and left_arrow != None
-            right_arrow_is_defined = right_arrow != CONST_EMPTY_STRING and right_arrow != None
+            left_arrow_is_defined = is_defined(left_arrow)
+            right_arrow_is_defined = is_defined(right_arrow)
             # based on guideline: "If the input query has an undirected relationship in the pattern, we do not correct it."
             if not left_arrow_is_defined and not right_arrow_is_defined:
                 printy(f'No direction found in match {full_match_string}, continuing')
@@ -86,19 +79,21 @@ def process_general_pattern(query, schema):
                 return_empty_response = True
         
             # If at least one class is not defined
-            # The class could be in other part of the query  
-            node_var_a_is_defined = node_var_a != CONST_EMPTY_STRING and node_var_a != None
-            node_var_b_is_defined = node_var_b != CONST_EMPTY_STRING and node_var_b != None 
+            # The class could be in other part of the query
+            node_var_a_is_defined = is_defined(node_var_a)
+            node_var_b_is_defined = is_defined(node_var_b)
             
+            # search classes for node a
             if not classes_a_is_defined:
                 if node_var_a_is_defined:
                     node_a_classes = search_for_classes(node_var_a, query)
-                    classes_a_is_defined = node_a_classes != CONST_EMPTY_STRING and node_a_classes != None
+                    classes_a_is_defined = is_defined(node_a_classes)
             
+            # search classes for node b
             if not classes_b_is_defined:
                 if node_var_b_is_defined:
                     node_b_classes = search_for_classes(node_var_b, query)
-                    classes_b_is_defined = node_b_classes != CONST_EMPTY_STRING and node_b_classes != None
+                    classes_b_is_defined = is_defined(node_b_classes)
                 
             # If both classes are still not defined, there is nothing to validate, continue
             if not classes_a_is_defined and not classes_b_is_defined:    
@@ -138,7 +133,8 @@ def process_general_pattern(query, schema):
                     printy(f'No schema item found for opposite pattern {source_classes_names} {rels_names} {target_classes_names} in match {full_match_string}')
                     printy(f'Schema: {schema}')
                     return_empty_response = True
-
+        
+        # no more matches to analyze
         if len(matches_to_remove) == 0:
             break
     
@@ -161,6 +157,7 @@ def process_short_rel_pattern(query, schema):
     matches_to_remove = []
     query_copy = query
     
+    # Do while loop that ends when there is no more matches to analyze
     while True: 
         
         # If there is some match to remove, remove it from the query
@@ -195,20 +192,20 @@ def process_short_rel_pattern(query, schema):
             rels_names_is_defined = False
             
             # If node a has classes, checks that at least one of the classes exists in the schema
-            classes_a_is_defined = node_a_classes != CONST_EMPTY_STRING and node_a_classes != None
+            classes_a_is_defined = is_defined(node_a_classes)
             if classes_a_is_defined and not classes_exists_in_schema(node_a_classes, schema):
                 printr(f'No schema item found for classes {node_a_classes} in match {full_match_string}')
                 return_empty_response = True
             
             # If node b has classes, checks that at least one of the classes exists in the schema
-            classes_b_is_defined = node_b_classes != CONST_EMPTY_STRING and node_b_classes != None
+            classes_b_is_defined = is_defined(node_b_classes)
             if classes_b_is_defined and not classes_exists_in_schema(node_b_classes, schema):
                 printr(f'No schema item found for classes {node_b_classes} in match {full_match_string}')
                 return_empty_response = True
             
             # If there is no direction (right or left arrow) do nothing
-            left_arrow_is_defined = left_arrow != CONST_EMPTY_STRING and left_arrow != None
-            right_arrow_is_defined = right_arrow != CONST_EMPTY_STRING and right_arrow != None
+            left_arrow_is_defined = is_defined(left_arrow)
+            right_arrow_is_defined = is_defined(right_arrow)
             # based on guideline: "If the input query has an undirected relationship in the pattern, we do not correct it."
             if not left_arrow_is_defined and not right_arrow_is_defined:
                 printb(f'No direction found in match {full_match_string}, continuing')
@@ -221,18 +218,20 @@ def process_short_rel_pattern(query, schema):
         
             # If at least one class is not defined
             # The class could be in other part of the query  
-            node_var_a_is_defined = node_var_a != CONST_EMPTY_STRING and node_var_a != None
-            node_var_b_is_defined = node_var_b != CONST_EMPTY_STRING and node_var_b != None 
+            node_var_a_is_defined = is_defined(node_var_a)
+            node_var_b_is_defined = is_defined(node_var_b)
             
+            # search classes for node a
             if not classes_a_is_defined:
                 if node_var_a_is_defined:
                     node_a_classes = search_for_classes(node_var_a, query)
-                    classes_a_is_defined = node_a_classes != CONST_EMPTY_STRING and node_a_classes != None
+                    classes_a_is_defined = is_defined(node_a_classes)
             
+            # search classes for node b
             if not classes_b_is_defined:
                 if node_var_b_is_defined:
                     node_b_classes = search_for_classes(node_var_b, query)
-                    classes_b_is_defined = node_b_classes != CONST_EMPTY_STRING and node_b_classes != None
+                    classes_b_is_defined = is_defined(node_b_classes)
                 
             # If both classes are still not defined, there is nothing to validate, continue
             if not classes_a_is_defined and not classes_b_is_defined:    
@@ -271,6 +270,7 @@ def process_short_rel_pattern(query, schema):
                     printy(f'Schema: {schema}')
                     return_empty_response = True
         
+        # no more matches to analyze
         if len(matches_to_remove) == 0:
             break
     

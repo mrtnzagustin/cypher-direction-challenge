@@ -31,6 +31,17 @@ CONST_COLOR_GREEN = "\033[32m"
 CONST_COLOR_YELLOW = "\033[33m"
 CONST_COLOR_NORMAL = "\033[0m"
 
+def is_defined(variable):
+    """Returns true if the variable is defined, false otherwise"""
+    return variable != CONST_EMPTY_STRING and variable != None
+
+def get_first_node_and_relationship(string):
+    """Returns the first node and relationship from the string"""
+    # in example for (nodeA)-[:REL]->(nodeB), returns only (nodeA)-[:REL]->
+    # for (nodeA)-->(nodeB), returns only (nodeA)-->
+    first_node_and_relationship = '(' + string.split('(')[1]
+    return first_node_and_relationship
+
 def printb(text):
     """Print text in blue"""
     print(CONST_COLOR_BLUE + text)
