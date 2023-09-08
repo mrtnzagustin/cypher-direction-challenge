@@ -4,6 +4,8 @@ import re
 
 CYPHER_QUERIES_CSV_FILE_PATH = "examples.csv"
 
+CONST_EMPTY_STRING = ''
+
 CONST_SOURCE_CLASS_KEY = "sourceClass"
 CONST_TARGET_CLASS_KEY = "targetClass"
 CONST_RELATIONSHIP_KEY = "relationship"
