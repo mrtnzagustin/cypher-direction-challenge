@@ -22,7 +22,7 @@ def process_general_pattern(query, schema):
         node_var_b = match.group('varB')
         node_b_classes = match.group('classesB') and match.group('classesB').replace(':','', 1).replace('`','').split(':')
         rel_var = match.group('relVar')
-        rels_names = match.group('relsNames') and match.group('relsNames').replace(':','').replace('`','').split('|')
+        rels_names = match.group('relsNames') and match.group('relsNames').replace(':','').replace('!','').replace('`','').split('|')
         left_arrow = match.group('leftArrow')
         right_arrow = match.group('rightArrow')
         

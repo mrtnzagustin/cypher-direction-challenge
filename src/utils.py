@@ -208,9 +208,9 @@ def create_pattern_class_must(class_group_name):
 def create_pattern_classes_must(classes_group_name):
     return f'(?P<{classes_group_name}>(:`?[\w]+`?)+)'
 
-# :REL_TYPE or :`REL_TYPE` 
+# :REL_TYPE or :`REL_TYPE` or :!REL_TYPE 
 def create_pattern_relationship_name(relationships_type_group_name):
-    return f'(?P<{relationships_type_group_name}>(?::`?[a-zA-Z_]*`?)?(?:\|`?[a-zA-Z_]+`?)*)?'
+    return f'(?P<{relationships_type_group_name}>(?::!?`?[a-zA-Z_]*`?)?(?:\|!?`?[a-zA-Z_]+`?)*)?'
 
 # -[variable:REL_TYPE]- or -[variable:`REL_TYPE`]- or -[:`REL_TYPE`]- including possible properties and arrow directions
 def create_pattern_relationship(relationship_variable_group_name, relationship_type_group_name, left_arrow_name, right_arrow_name):
