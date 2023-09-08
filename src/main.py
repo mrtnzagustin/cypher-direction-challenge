@@ -3,6 +3,7 @@ import re
 
 def process_general_pattern(query, schema):
     """Process the general pattern, with relationship name. Examples: (varA:classA)-[relVar:relName]->(varB:classB) or (varA:classA)<-[relVar:relName]-(varB:classB)"""
+    return_empty_response = False # flag used to return an empty string
     # Strucutre of the pattern: (varA:classA){leftArrow}-[relVar:relName]-{rightArrow}(varB:classB)
     pattern_str = f'{create_pattern_node("varA","classesA")}{create_pattern_relationship("relVar","relsNames","leftArrow","rightArrow")}{create_pattern_node("varB","classesB")}'
     pattern = re.compile(pattern_str)
@@ -29,19 +30,19 @@ def process_general_pattern(query, schema):
         rels_names_is_defined = rels_names != '' and rels_names != None
         if rels_names_is_defined and not relationships_exists_in_schema(rels_names, schema):
             printy(f'No schema item found for relationships {rels_names} in match {full_match_string}')
-            return ''
+            return_empty_response = True
         
         # If node a has classes, checks that at least one of the classes exists in the schema
         classes_a_is_defined = node_a_classes != '' and node_a_classes != None
         if classes_a_is_defined and not classes_exists_in_schema(node_a_classes, schema):
             printy(f'No schema item found for classes {node_a_classes} in match {full_match_string}')
-            return ''
+            return_empty_response = True
         
         # If node b has classes, checks that at least one of the classes exists in the schema
         classes_b_is_defined = node_b_classes != '' and node_b_classes != None
         if classes_b_is_defined and not classes_exists_in_schema(node_b_classes, schema):
             printy(f'No schema item found for classes {node_b_classes} in match {full_match_string}')
-            return ''
+            return_empty_response = True
         
         # If there is no direction (right or left arrow) do nothing
         left_arrow_is_defined = left_arrow != '' and left_arrow != None
@@ -54,7 +55,7 @@ def process_general_pattern(query, schema):
         # If both directions are defined, that is an error
         if not left_arrow_is_defined and not right_arrow_is_defined:
             printy(f'Both directions are defined in {full_match_string}')
-            return ''
+            return_empty_response = True
     
         # If at least one class is not defined
         # The class could be in other part of the query  
@@ -108,12 +109,16 @@ def process_general_pattern(query, schema):
                 # this response is based on the guideline: "If the given pattern in a Cypher statement doesn't fit the graph schema, simply return an empty string"
                 printy(f'No schema item found for opposite pattern {source_classes_names} {rels_names} {target_classes_names} in match {full_match_string}')
                 printy(f'Schema: {schema}')
-                return ''
+                return_empty_response = True
     
-    return query
+    if return_empty_response:
+        return ''
+    else:
+        return query
             
 def process_short_rel_pattern(query, schema):
     """Process the short pattern, with no relationship name. Examples: (varA:classA)--(varB:classB) or (varA:classA)<--(varB:classB)"""
+    return_empty_response = False # flag used to return an empty string
     # Strucutre of the pattern: (varA:classA){leftArrow}--{rightArrow}(varB:classB)
     pattern_str = f'{create_pattern_node("varA","classesA")}{create_pattern_relationship_short("leftArrow","rightArrow")}{create_pattern_node("varB","classesB")}'
     pattern = re.compile(pattern_str)
@@ -142,13 +147,13 @@ def process_short_rel_pattern(query, schema):
         classes_a_is_defined = node_a_classes != '' and node_a_classes != None
         if classes_a_is_defined and not classes_exists_in_schema(node_a_classes, schema):
             printr(f'No schema item found for classes {node_a_classes} in match {full_match_string}')
-            return ''
+            return_empty_response = True
         
         # If node b has classes, checks that at least one of the classes exists in the schema
         classes_b_is_defined = node_b_classes != '' and node_b_classes != None
         if classes_b_is_defined and not classes_exists_in_schema(node_b_classes, schema):
             printr(f'No schema item found for classes {node_b_classes} in match {full_match_string}')
-            return ''
+            return_empty_response = True
         
         # If there is no direction (right or left arrow) do nothing
         left_arrow_is_defined = left_arrow != '' and left_arrow != None
@@ -161,7 +166,7 @@ def process_short_rel_pattern(query, schema):
         # If both directions are defined, that is an error
         if not left_arrow_is_defined and not right_arrow_is_defined:
             printr(f'Both directions are defined in {full_match_string}')
-            return ''
+            return_empty_response = True
     
         # If at least one class is not defined
         # The class could be in other part of the query  
@@ -213,9 +218,12 @@ def process_short_rel_pattern(query, schema):
                 # this response is based on the guideline: "If the given pattern in a Cypher statement doesn't fit the graph schema, simply return an empty string"
                 printy(f'No schema item found for opposite pattern {source_classes_names} {rels_names} {target_classes_names} in match {full_match_string}')
                 printy(f'Schema: {schema}')
-                return ''
+                return_empty_response = True
     
-    return query
+    if return_empty_response:
+        return ''
+    else:
+        return query
         
 def process_query(query, schema):
     """Process the cypher query with the given schema"""
