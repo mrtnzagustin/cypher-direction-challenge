@@ -1,8 +1,8 @@
 from utils import *
 import re
 
-def remove_first_node_and_relationship(string):
-    """Remove the first node and relationship from the string"""
+def get_first_node_and_relationship(string):
+    """Returns the first node and relationship from the string"""
     # in example for (nodeA)-[:REL]->(nodeB), returns only (nodeA)-[:REL]->
     # for (nodeA)-->(nodeB), returns only (nodeA)-->
     first_node_and_relationship = '(' + string.split('(')[1]
@@ -39,8 +39,8 @@ def process_general_pattern(query, schema):
             # Get the match string
             full_match_string = match.group()
             
-            # Store the match string to remove it later
-            matches_to_remove.append(remove_first_node_and_relationship(full_match_string))
+            # Store the first node and rel from the match string to remove it later
+            matches_to_remove.append(get_first_node_and_relationship(full_match_string))
             
             printb(f'Processing match {full_match_string}')
             
@@ -179,8 +179,8 @@ def process_short_rel_pattern(query, schema):
             
             printb(f'Processing match {full_match_string}')
             
-            # Store the match string to remove it later
-            matches_to_remove.append(remove_first_node_and_relationship(full_match_string))
+            # Store the first node and rel from the match string to remove it later
+            matches_to_remove.append(get_first_node_and_relationship(full_match_string))
             
             # Get the groups
             node_var_a = match.group('varA')
@@ -293,6 +293,7 @@ def process_all_queries():
     correct_count = 0
     incorrect_count = 0
     correct_with_warnings_count = 0
+    
     for query in cypher_queries:
         printb(CONST_EMPTY_STRING)
         printb(f'-------------------------')
@@ -317,8 +318,8 @@ def main():
     printn('Starting process')
     printn(CONST_EMPTY_STRING)
     
-    process_query(
-        """ (:Organization)-->(:Person) RETURN o.name AS name """,
+    result = process_query(
+        """ (:Organization)-->(:Person)<-[:WORKS_AT]-(o:Organization) RETURN o.name AS name """,
         [
             {
                 'sourceClass': 'Person',
