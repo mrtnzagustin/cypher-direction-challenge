@@ -4,15 +4,66 @@ from utils.constants import CONST_EMPTY_STRING, CONST_STATEMENT_KEY, CONST_SCHEM
 from utils.patterns_processing import process_general_pattern, process_short_rel_pattern
 
 def process_query(query, schema):
-    """Process the cypher query with the given schema"""
-    # Search for patterns, and check if the direction is correct by analyzing the schema
+    """
+    Processes and adjusts the provided Cypher query based on the given schema.
+
+    This function takes a Cypher query and a schema as input. It searches for 
+    specific patterns within the query and verifies the direction of relationships 
+    based on the provided schema. If any discrepancies are found, the function 
+    adjusts the query to align with the schema.
+
+    Parameters:
+    - query (str): The Cypher query to be processed.
+    - schema (object): The schema against which the query is to be validated and corrected.
+
+    Returns:
+    - str: The processed and corrected Cypher query.
+
+    Example:
+    ```python
+    query = "MATCH (a)-[r]->(b) RETURN a, b"
+    processed_query = process_query(query, my_schema)
+    ```
+
+    Note:
+    - The function calls two internal methods:
+      1. process_general_pattern: For general pattern checking and correction.
+      2. process_short_rel_pattern: For checking and correcting short relationship patterns.
+    """
+    # Search for patterns, check if the direction is correct by analyzing the schema and corrects it whenever is needed
     query = process_general_pattern(query, schema)
     query = process_short_rel_pattern(query, schema)
     
     return query
     
 def process_all_queries():
-    # Parse the examples file with cypher queries to process them
+    """
+    Processes all Cypher queries from a predefined CSV file and validates their correctness.
+    
+    This function parses a CSV file containing example Cypher queries. For each query, 
+    it attempts to process and correct it. It then validates the processed query against 
+    a provided correct version. The results of the processing are printed to the console, 
+    and counters for various outcomes (correct, incorrect, etc.) are maintained.
+
+    Note: 
+    - The function assumes the CSV file has columns for the statement, schema, and correct query.
+    - Helper functions and constants like `parse_csv_with_cypher_queries`, `printb`, `printg`, 
+      `printy`, and `printr` are utilized for various operations and console output.
+
+    Returns:
+    - tuple: A tuple containing counts of:
+      1. Correctly processed queries.
+      2. Incorrectly processed queries.
+      3. Queries processed with warnings.
+      4. Total number of queries processed.
+
+    Example:
+    ```python
+    correct, incorrect, with_warnings, total = process_all_queries()
+    print(f"Correct: {correct}, Incorrect: {incorrect}, With Warnings: {with_warnings}, Total: {total}")
+    ```
+
+    """
     cypher_queries = parse_csv_with_cypher_queries()
     correct_count = 0
     incorrect_count = 0

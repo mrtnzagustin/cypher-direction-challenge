@@ -4,14 +4,55 @@ from .general import is_defined
 from .ui import printb, printg, printr, printy
 
 def get_first_node_and_relationship(string):
-    """Returns the first node and relationship from the string"""
+    """
+    Extracts and returns the initial node and its relationship from a Cypher pattern.
+
+    This function extracts the first node and its connecting relationship from a given Cypher 
+    pattern string. It does not include the next node in the result.
+
+    Parameters:
+    - string (str): A Cypher pattern string. 
+      E.g., "(nodeA)-[:REL]->(nodeB)" or "(nodeA)-->(nodeB)".
+
+    Returns:
+    - str: A substring containing the first node and its relationship.
+      E.g., For the input "(nodeA)-[:REL]->(nodeB)", the output would be "(nodeA)-[:REL]->".
+
+    Examples:
+    ```python
+    result = get_first_node_and_relationship("(nodeA)-[:REL]->(nodeB)")
+    print(result)  # Outputs: "(nodeA)-[:REL]->"
+    ```
+
+    """
     # in example for (nodeA)-[:REL]->(nodeB), returns only (nodeA)-[:REL]->
     # for (nodeA)-->(nodeB), returns only (nodeA)-->
     first_node_and_relationship = '(' + string.split('(')[1]
     return first_node_and_relationship
 
 def search_for_classes(variable, query):
-    """Search for the classes of the given variable in the query"""
+    """
+    Searches for the classes (labels) associated with a given variable within a Cypher query.
+
+    This function looks for node patterns in the Cypher query that are associated 
+    with the provided variable, and extracts the class or classes (labels) assigned 
+    to that node.
+
+    Parameters:
+    - variable (str): The variable whose classes (labels) are to be identified.
+    - query (str): The Cypher query string where the search is to be performed.
+
+    Returns:
+    - list[str] or None: A list of classes (labels) associated with the variable, 
+      or None if no match is found.
+
+    Examples:
+    ```python
+    classes = search_for_classes("a", "(a:Person:Employee)-[:WORKS_AT]->(b:Company)")
+    print(classes)  # Outputs: ['Person', 'Employee']
+    ```
+
+    """
     # Example (a:Person)
     pattern_str = f'{create_pattern_node_with_variable(variable,"classesNames")}'
     pattern = re.compile(pattern_str)
@@ -30,7 +71,27 @@ def search_for_classes(variable, query):
     return None
 
 def pattern_exists_in_schema_multiple(source_classes_names, target_classes_names, rels_names, schema, source_classes_is_defined, target_classes_is_defined, rels_names_is_defined):
-    """Check if the given pattern exists in the schema, but with many possible classes (target and source), relationships and directions"""
+    """
+    Determines if a given pattern with multiple possible combinations exists within the schema.
+
+    This function checks for a match of the provided pattern components (source classes, target 
+    classes, and relationships) against the provided schema. It does so by iterating through all 
+    possible combinations of the given pattern components and checks if any of those combinations 
+    match with the schema.
+
+    Parameters:
+    - source_classes_names (list[str]): List of possible source class names.
+    - target_classes_names (list[str]): List of possible target class names.
+    - rels_names (list[str]): List of possible relationship names.
+    - schema (list[dict]): The schema against which the pattern is checked.
+    - source_classes_is_defined (bool): Whether the source classes are defined.
+    - target_classes_is_defined (bool): Whether the target classes are defined.
+    - rels_names_is_defined (bool): Whether the relationships are defined.
+
+    Returns:
+    - bool: True if a matching pattern is found, otherwise False.
+
+    """
     # source, relationship and target
     if source_classes_is_defined and target_classes_is_defined and rels_names_is_defined:
         for source_class_name in source_classes_names:
@@ -70,7 +131,25 @@ def pattern_exists_in_schema_multiple(source_classes_names, target_classes_names
     return False
     
 def pattern_exists_in_schema(source_class_name, target_class_name, rel_name, schema, source_class_is_defined, target_class_is_defined, rel_name_is_defined):
-    """Check if the given pattern exists in the schema. In example Person, WORKS_AT, Organization"""
+    """
+    Determines if a given pattern exists within the schema.
+
+    This function checks if the provided pattern components (source class, target class, and 
+    relationship) match any entry in the provided schema.
+
+    Parameters:
+    - source_class_name (str or None): The name of the source class.
+    - target_class_name (str or None): The name of the target class.
+    - rel_name (str or None): The name of the relationship.
+    - schema (list[dict]): The schema against which the pattern is checked.
+    - source_class_is_defined (bool): Whether the source class is defined.
+    - target_class_is_defined (bool): Whether the target class is defined.
+    - rel_name_is_defined (bool): Whether the relationship is defined.
+
+    Returns:
+    - bool: True if a matching pattern is found, otherwise False.
+
+    """
     # source, relationship and target
     if source_class_is_defined and target_class_is_defined and rel_name_is_defined:
         return any(
@@ -108,72 +187,256 @@ def pattern_exists_in_schema(source_class_name, target_class_name, rel_name, sch
             for item in schema)
 
 def classes_exists_in_schema(classes_name, schema):
-    """Check if at least one of the given classes exists in the schema"""
+    """
+    Determines if any of the specified classes exist within the provided schema.
+
+    Parameters:
+    - classes_name (list[str]): List of class names to check.
+    - schema (list[dict]): The schema against which the classes are checked.
+
+    Returns:
+    - bool: True if any class from the list is found in the schema, otherwise False.
+    """
     return any (class_name in list_classes(schema) for class_name in classes_name)
 
 def relationships_exists_in_schema(relationships_names, schema):
-    """Check if at least one of the given relationship exists in the schema"""
+    """
+    Determines if any of the specified relationships exist within the provided schema.
+
+    Parameters:
+    - relationships_names (list[str]): List of relationship names to check.
+    - schema (list[dict]): The schema against which the relationships are checked.
+
+    Returns:
+    - bool: True if any relationship from the list is found in the schema, otherwise False.
+    """
     return any (relationship_name in list_unique_relationships(schema) for relationship_name in relationships_names)
 
-# (variable:ClassName) or (:ClassName) or (), including possible properties
 def create_pattern_node(variable_group_name, class_group_name):
+    """
+    Generates a regex pattern for a node, including optional properties.
+    
+    This pattern can represent nodes like: (variable:ClassName), (:ClassName), or ().
+
+    Parameters:
+    - variable_group_name (str): Name for the regex group capturing the variable name.
+    - class_group_name (str): Name for the regex group capturing the class name(s).
+
+    Returns:
+    - str: Regex pattern for the node.
+    """
     return f'(?:\({create_pattern_variable(variable_group_name)}{create_pattern_classes(class_group_name)}'+CONST_PATTERN_PROPERTIES+'\))'
 
-# (variable:ClassName) or (variable:ClassName:OtherClass) including possible properties, variable and class are mandatory
 def create_pattern_node_with_variable(variable_name, classes_group_name):
+    """
+    Generates a regex pattern for a node that mandates both the variable and class.
+    
+    The pattern represents nodes like: 
+    (variable:ClassName) or (variable:ClassName:OtherClass)
+    The node may also include optional properties.
+
+    Parameters:
+    - variable_name (str): Name for the regex group capturing the variable name.
+    - classes_group_name (str): Name for the regex group capturing the mandatory class names.
+
+    Returns:
+    - str: Regex pattern for the node with a mandatory variable and class.
+    """
     return f'(?:\({variable_name}{create_pattern_classes_must(classes_group_name)}'+CONST_PATTERN_PROPERTIES+'\))'
 
-# a single variable name using words only, no spaces, it could be empty
 def create_pattern_variable(variable_group_name):
+    """
+    Generates a regex pattern for a single variable name.
+    
+    The pattern represents a variable name consisting only of words without spaces.
+    The variable could be empty.
+
+    Parameters:
+    - variable_group_name (str): Name for the regex group capturing the variable name.
+
+    Returns:
+    - str: Regex pattern for the variable name.
+    """
     return f'(?P<{variable_group_name}>[a-zA-Z]*)'
 
-# :ClassName or :`ClassName`
 def create_pattern_classes(classes_group_name):
+    """
+    Generates a regex pattern for class names in nodes.
+    
+    The pattern represents class names in various formats, such as:
+    :ClassName or :`ClassName`
+    Multiple class names (like :Class1:Class2) are also matched.
+
+    Parameters:
+    - classes_group_name (str): Name for the regex group capturing the class names.
+
+    Returns:
+    - str: Regex pattern for class names in nodes.
+    """
     return f'(?P<{classes_group_name}>(:`?[\w]+`?)*)'
 
-# :ClassName or :`ClassName`
 def create_pattern_classes_must(classes_group_name):
+    """
+    Generates a regex pattern for mandatory class names in nodes.
+    
+    The pattern represents class names in various formats, such as:
+    :ClassName or :`ClassName`
+    Unlike the 'create_pattern_classes' function, this ensures that at least one class name exists.
+
+    Parameters:
+    - classes_group_name (str): Name for the regex group capturing the mandatory class names.
+
+    Returns:
+    - str: Regex pattern for mandatory class names in nodes.
+    """
     return f'(?P<{classes_group_name}>(:`?[\w]+`?)+)'
 
-# :REL_TYPE or :`REL_TYPE` or :!REL_TYPE 
 def create_pattern_relationship_name(relationships_type_group_name):
+    """
+    Generates a regex pattern for relationship names.
+    
+    The pattern represents relationship names in various formats, including optional negation, such as:
+    :REL_TYPE or :`REL_TYPE` or :!REL_TYPE 
+    Multiple relationship types separated by '|' are also matched.
+
+    Parameters:
+    - relationships_type_group_name (str): Name for the regex group capturing the relationship types.
+
+    Returns:
+    - str: Regex pattern for relationship names.
+    """
     return f'(?P<{relationships_type_group_name}>(?::!?`?[a-zA-Z_]*`?)?(?:\|!?`?[a-zA-Z_]+`?)*)?'
 
-# -[variable:REL_TYPE]- or -[variable:`REL_TYPE`]- or -[:`REL_TYPE`]- including possible properties and arrow directions
 def create_pattern_relationship(relationship_variable_group_name, relationship_type_group_name, left_arrow_name, right_arrow_name):
+    """
+    Generates a regex pattern for relationships in a graph pattern.
+    
+    The pattern represents relationships in various formats, such as:
+    -[variable:REL_TYPE]-, -[variable:`REL_TYPE`]-, or -[:`REL_TYPE`]-.
+    It also accounts for optional arrow directions (e.g., -> or <-), variable names, relationship types, and properties.
+
+    Parameters:
+    - relationship_variable_group_name (str): Name for the regex group capturing the relationship variable (e.g., "rel" in -[rel:REL_TYPE]-).
+    - relationship_type_group_name (str): Name for the regex group capturing the relationship type (e.g., "REL_TYPE" in -[:REL_TYPE]-).
+    - left_arrow_name (str): Name for the regex group capturing the optional left arrow direction (<).
+    - right_arrow_name (str): Name for the regex group capturing the optional right arrow direction (>).
+
+    Returns:
+    - str: Regex pattern for relationships in a graph pattern.
+    """
     return f'(?P<{left_arrow_name}><)?-\[{create_pattern_variable(relationship_variable_group_name)}{create_pattern_relationship_name(relationship_type_group_name)}{CONST_PATTERN_PROPERTIES}\]-(?P<{right_arrow_name}>>)?'
 
-# <-- or -->
 def create_pattern_relationship_short(left_arrow_name, right_arrow_name):
+    """
+    Generates a simplified regex pattern for relationships without specified types or properties.
+    
+    The pattern matches short relationship patterns, such as:
+    --> or <--.
+    
+    Parameters:
+    - left_arrow_name (str): Name for the regex group capturing the optional left arrow direction (<).
+    - right_arrow_name (str): Name for the regex group capturing the optional right arrow direction (>).
+
+    Returns:
+    - str: Regex pattern for simplified relationships in a graph pattern.
+    """
     return f'(?P<{left_arrow_name}><)?--(?P<{right_arrow_name}>>)?'
 
 def list_classes(schema):
-    """List all the classes that are present in the schema"""
+    """
+    Retrieves a list of unique classes present in the given schema.
+
+    This function combines both source and target classes and returns a unique list 
+    of all class names that appear in the schema.
+
+    Parameters:
+    - schema (list of dict): A list of dictionary items representing the graph schema.
+
+    Returns:
+    - list of str: A list of unique class names.
+    """
     classes_set = {item[CONST_SOURCE_CLASS_KEY] for item in schema}
     classes_set.update({item[CONST_TARGET_CLASS_KEY] for item in schema})
     classes_list = list(classes_set)
     return classes_list
 
 def list_source_classes(schema):
-    """List all the classes that are source classes at least once in the schema"""
+    """
+    Retrieves a list of unique source classes from the given schema.
+
+    This function examines the source classes from the schema and returns a list 
+    of unique class names that have been used as sources.
+
+    Parameters:
+    - schema (list of dict): A list of dictionary items representing the graph schema.
+
+    Returns:
+    - list of str: A list of unique source class names.
+    """
     source_classes_set = {item[CONST_SOURCE_CLASS_KEY] for item in schema}
     source_classes_list = list(source_classes_set)
     return source_classes_list
 
 def list_target_classes(schema):
-    """List all the classes that are target classes at least once in the schema"""
+    """
+    Retrieves a list of unique target classes from the given schema.
+
+    This function examines the target classes from the schema and returns a list 
+    of unique class names that have been used as targets.
+
+    Parameters:
+    - schema (list of dict): A list of dictionary items representing the graph schema.
+
+    Returns:
+    - list of str: A list of unique target class names.
+    """
     target_classes_set = {item[CONST_TARGET_CLASS_KEY] for item in schema}
     target_classes_list = list(target_classes_set)
     return target_classes_list
 
 def list_unique_relationships(schema):
-    """List the unique relationships in the schema"""
+    """
+    Retrieves a list of unique relationships present in the given schema.
+
+    This function examines the relationships (or predicates) from the schema and 
+    returns a list of unique names.
+
+    Parameters:
+    - schema (list of dict): A list of dictionary items representing the graph schema.
+
+    Returns:
+    - list of str: A list of unique relationship names.
+    """
     predicates_set = {item[CONST_RELATIONSHIP_KEY] for item in schema}
     predicates_list = list(predicates_set)
     return predicates_list
 
 def process_general_pattern(query, schema):
-    """Process the general pattern, with relationship name. Examples: (varA:classA)-[relVar:relName]->(varB:classB) or (varA:classA)<-[relVar:relName]-(varB:classB)"""
+    """
+    Process a general Cypher pattern query against the given graph schema.
+
+    This function examines a Cypher query to ensure it matches the provided graph schema.
+    If the pattern does not match, the function attempts to correct the query.
+    In certain conditions (e.g. undirected relationships or unmatched patterns), 
+    it might return an empty string, based on challenge guidelines.
+
+    Examples of handled patterns:
+    - (varA:classA)-[relVar:relName]->(varB:classB)
+    - (varA:classA)<-[relVar:relName]-(varB:classB)
+
+    Parameters:
+    - query (str): The Cypher query pattern to be processed.
+    - schema (list of dict): A list of dictionary items representing the graph schema.
+
+    Returns:
+    - str: The processed query if it's valid according to the schema, 
+           otherwise an empty string.
+    
+    Note:
+    The function uses regular expressions to identify nodes and relationships 
+    in the query. After identifying patterns in the query, it checks the validity
+    of the pattern with the provided schema and tries to correct any discrepancies.
+    """
     return_empty_response = False # flag used to return an empty string based on challenge guidelines
     # Strucutre of the pattern: (varA:classA){leftArrow}-[relVar:relName]-{rightArrow}(varB:classB)
     pattern_str = f'{create_pattern_node("varA","classesA")}{create_pattern_relationship("relVar","relsNames","leftArrow","rightArrow")}{create_pattern_node("varB","classesB")}'
@@ -245,7 +508,7 @@ def process_general_pattern(query, schema):
                 continue
             
             # If both directions are defined, that is an error
-            if not left_arrow_is_defined and not right_arrow_is_defined:
+            if left_arrow_is_defined and right_arrow_is_defined:
                 printy(f'Both directions are defined in {full_match_string}')
                 return_empty_response = True
         
@@ -315,7 +578,33 @@ def process_general_pattern(query, schema):
         return query
             
 def process_short_rel_pattern(query, schema):
-    """Process the short pattern, with no relationship name. Examples: (varA:classA)--(varB:classB) or (varA:classA)<--(varB:classB)"""
+    """
+    Process a Cypher query pattern with short (unlabeled) relationships.
+    
+    This function corrects the direction of relationships in the given Cypher
+    query pattern based on the provided schema. It identifies patterns that don't 
+    fit the schema and attempts to correct them. If a pattern cannot be 
+    corrected or identified within the schema, an empty string is returned.
+    
+    Args:
+        query (str): The input Cypher query string.
+        schema (object): The schema against which the query is validated.
+        
+    Returns:
+        str: Corrected Cypher query or an empty string if the query doesn't 
+             fit the graph schema.
+        
+    Example patterns:
+        (varA:classA)--(varB:classB) or (varA:classA)<--(varB:classB)
+    
+    Notes:
+        - The function assumes that the relationship name is not provided 
+          in the pattern.
+        - If a query contains an undirected relationship, the function does not 
+          correct it.
+        - If a given pattern doesn't fit the graph schema, the function 
+          returns an empty string.
+    """
     return_empty_response = False # flag used to return an empty string based on challenge guidelines
     # Strucutre of the pattern: (varA:classA){leftArrow}--{rightArrow}(varB:classB)
     pattern_str = f'{create_pattern_node("varA","classesA")}{create_pattern_relationship_short("leftArrow","rightArrow")}{create_pattern_node("varB","classesB")}'
@@ -383,7 +672,7 @@ def process_short_rel_pattern(query, schema):
                 continue
             
             # If both directions are defined, that is an error
-            if not left_arrow_is_defined and not right_arrow_is_defined:
+            if left_arrow_is_defined and right_arrow_is_defined:
                 printr(f'Both directions are defined in {full_match_string}')
                 return_empty_response = True
         
